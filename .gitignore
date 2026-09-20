@@ -1,0 +1,13 @@
+config.json
+extension/config.js
+runtime/
+models/
+logs/
+*.app/
+.DS_Store
+__pycache__/
+tests/*-result.json
+tests/fixture.jpg
+release/*.dmg
+release/*.zip
+release/SHA256SUMS.txt

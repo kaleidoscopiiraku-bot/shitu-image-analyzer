@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "updated": "2026-09-20",
+  "models": [
+    {
+      "id": "shitu-qwen3-vl-8b",
+      "name": "拾图增强模型 · Qwen3-VL 8B 4-bit + Pinterest LoRA",
+      "family": "Qwen3-VL",
+      "variant": "8B Instruct 4-bit + 拾图 LoRA",
+      "memory_gb": 16,
+      "disk_gb": 14,
+      "quality": "均衡",
+      "speed": "均衡",
+      "installed": false,
+      "downloadable": false,
+      "release_state": "verified-local",
+      "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-8B-Instruct-4bit",
+      "license": "Apache-2.0",
+      "model_path": "models/mlx-qwen3-vl",
+      "adapter_path": "models/mlx-adapter-v2",
+      "notes": "当前拾图增强模式使用。发布包不内置模型；本机模型约 5.4 GB，另含约 83 MB 的拾图 LoRA 和运行环境。"
+    },
+    {
+      "id": "qwen3-vl-4b-4bit",
+      "name": "Qwen3-VL 4B 4-bit · 轻量候选",
+      "family": "Qwen3-VL",
+      "variant": "4B Instruct 4-bit",
+      "memory_gb": 8,
+      "disk_gb": 4,
+      "quality": "基础",
+      "speed": "较快",
+      "installed": false,
+      "downloadable": false,
+      "release_state": "candidate",
+      "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-4B-Instruct-4bit",
+      "license": "Apache-2.0",
+      "notes": "模型卡标注约 3.09 GB。已记录下载来源，当前版本尚未接入自动下载或拾图 LoRA 适配。"
+    },
+    {
+      "id": "qwen3-vl-4b-thinking-4bit",
+      "name": "Qwen3-VL 4B Thinking 4-bit · 低内存探索",
+      "family": "Qwen3-VL",
+      "variant": "4B Thinking 4-bit",
+      "memory_gb": 8,
+      "disk_gb": 4,
+      "quality": "推理增强",
+      "speed": "较慢",
+      "installed": false,
+      "downloadable": false,
+      "release_state": "candidate",
+      "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-4B-Thinking-4bit",
+      "license": "Apache-2.0",
+      "notes": "适合低内存设备做对照测试；当前版本不作为拾图增强模式的默认运行器。"
+    },
+    {
+      "id": "qwen3-vl-8b-8bit",
+      "name": "Qwen3-VL 8B 8-bit · 高质量候选",
+      "family": "Qwen3-VL",
+      "variant": "8B Instruct 8-bit",
+      "memory_gb": 24,
+      "disk_gb": 12,
+      "quality": "较高",
+      "speed": "较慢",
+      "installed": false,
+      "downloadable": false,
+      "release_state": "candidate",
+      "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-8B-Instruct-8bit",
+      "license": "Apache-2.0",
+      "notes": "适合统一内存更大的 Apple Silicon Mac；当前版本只保留在清单中，尚未接入拾图 LoRA 与自动下载。"
+    }
+  ]
+}
