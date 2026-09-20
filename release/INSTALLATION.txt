@@ -1,0 +1,15 @@
+拾图 0.1.0 / Shitu 0.1.0 安装说明
+
+中文
+1. 打开 shitu-0.1.0-macos-arm64.dmg。
+2. 将“拾图.app”拖到“应用程序”。
+3. 若系统提示无法验证开发者，请到“系统设置 → 隐私与安全性”允许打开。
+4. 解压 shitu-0.1.0-chrome-extension.zip，在 chrome://extensions 开启开发者模式并加载解压后的文件夹。
+
+English
+1. Open shitu-0.1.0-macos-arm64.dmg.
+2. Drag 拾图.app to Applications.
+3. If macOS blocks the app, allow it under System Settings → Privacy & Security.
+4. Unzip shitu-0.1.0-chrome-extension.zip, enable Developer mode at chrome://extensions, and choose Load unpacked.
+
+The release does not include the large local model files. See MODEL-DOWNLOADS.md.

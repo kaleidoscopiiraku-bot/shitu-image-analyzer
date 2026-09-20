@@ -6,7 +6,7 @@
 
 1. 打开 `.dmg`，把“拾图”拖到“应用程序”。
 2. 第一次打开时，如果 macOS 提示无法验证开发者，请在“系统设置 → 隐私与安全性”中允许打开。
-3. Chrome 插件使用单独的 `拾图-0.1.0-Chrome-extension.zip`：解压后打开 `chrome://extensions`，开启“开发者模式”，选择“加载已解压的扩展程序”。
+3. Chrome 插件使用单独的 `shitu-0.1.0-chrome-extension.zip`：解压后打开 `chrome://extensions`，开启“开发者模式”，选择“加载已解压的扩展程序”。
 
 ## 模型
 
@@ -30,7 +30,7 @@ This Apple Silicon macOS development release includes the enhanced local model e
 
 1. Open the `.dmg` and drag `拾图.app` to Applications.
 2. If macOS blocks the ad-hoc signed app, allow it under System Settings → Privacy & Security.
-3. Unzip `拾图-0.1.0-Chrome-extension.zip`, open `chrome://extensions`, enable Developer mode, and choose **Load unpacked**.
+3. Unzip `shitu-0.1.0-chrome-extension.zip`, open `chrome://extensions`, enable Developer mode, and choose **Load unpacked**.
 
 ## Models
 
