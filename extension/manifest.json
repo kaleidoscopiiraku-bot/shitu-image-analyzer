@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "拾图 · 图片分析",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "description": "右键使用本地增强模型或 ChatGPT（Codex CLI）分析图片。",
   "icons": {
     "16": "icons/icon16.png",
