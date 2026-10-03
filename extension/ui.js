@@ -4,29 +4,44 @@ const fields=[['prompt','生图提示词'],['subject','主体'],['material','材
 function el(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text)x.textContent=text;return x;}
 window.mountInspector=function(root,options){
  const shell=el('section','ii-shell'), head=el('header','ii-head'),badge=el('span','ii-badge','增强模型');
- head.append(el('span','ii-brand','拾图'),badge,el('span','ii-space'));
+ head.append(el('span','ii-brand','MiMo看图'),badge,el('span','ii-space'));
  function btn(label,fn,cls){const b=el('button',cls,label);b.type='button';b.onclick=fn;return b;}
  const tabs=el('nav','ii-tabs');tabs.setAttribute('role','tablist');
  const analysisTab=btn('分析图片',()=>switchTab('analysis'),'ii-tab');analysisTab.setAttribute('role','tab');analysisTab.setAttribute('aria-selected','true');
  const historyTab=el('button','ii-tab');historyTab.type='button';historyTab.setAttribute('role','tab');historyTab.setAttribute('aria-selected','false');
  const historyTabCount=el('span','ii-tab-count','0');historyTab.append(el('span','','最近分析'),historyTabCount);historyTab.onclick=()=>switchTab('history');tabs.append(analysisTab,historyTab);
- const native=(action,value)=>window.webkit?.messageHandlers?.native?.postMessage({action,value});
+ const stylesTab=btn('风格提示词',()=>switchTab('styles'),'ii-tab');stylesTab.setAttribute('role','tab');if(window.mountStyleLibrary)tabs.append(stylesTab);
+ const nativePending=new Map();
+ if(options.native)window.__shituNativeReply=(id,ok)=>{const p=nativePending.get(id);if(!p)return;clearTimeout(p.timer);nativePending.delete(id);ok?p.resolve():p.reject(Error('剪贴板写入失败，请选中文字手动复制。'));};
+ const native=(action,value)=>{
+  const handler=window.webkit?.messageHandlers?.native;
+  if(action!=='copy'){handler?.postMessage({action,value});return;}
+  return new Promise((resolve,reject)=>{
+   if(!handler){reject(Error('复制服务暂不可用，请选中文字手动复制。'));return;}
+   const requestId='copy-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+   const timer=setTimeout(()=>{nativePending.delete(requestId);reject(Error('未收到复制确认，请选中文字手动复制。'));},3000);
+   nativePending.set(requestId,{resolve,reject,timer});handler.postMessage({action,value,requestId});
+  });
+ };
  if(options.close){head.style.cursor='grab';head.append(btn('−',()=>shell.classList.toggle('ii-collapsed'),'ii-icon'),btn('×',options.close,'ii-icon'));}
  const body=el('div','ii-body');
  if(options.native) body.classList.add('ii-native-body');
  const rail=options.native?el('aside','ii-app-rail'):null;
- let railAnalysis=null,railHistory=null,railHistoryCount=null;
+ let railAnalysis=null,railHistory=null,railHistoryCount=null,railStyles=null;
  if(rail){
-  const railBrand=el('div','ii-rail-brand');railBrand.append(el('strong','','拾图'),el('span','','IMAGE → PROMPT'));
+  const railBrand=el('div','ii-rail-brand');railBrand.append(el('strong','','MiMo看图'),el('span','','IMAGE → PROMPT'));
   const railNav=el('nav','ii-rail-nav');
   railAnalysis=btn('⌁  图片分析',()=>switchTab('analysis'),'ii-rail-item ii-active');
   railHistory=btn('◷  最近分析',()=>switchTab('history'),'ii-rail-item');railHistoryCount=el('span','ii-rail-count','0');railHistory.append(railHistoryCount);
-  railNav.append(railAnalysis,railHistory);
+  railStyles=btn('◈  风格提示词',()=>switchTab('styles'),'ii-rail-item');
+  railNav.append(railAnalysis);if(window.mountStyleLibrary)railNav.append(railStyles);railNav.append(railHistory);
   const railSection=el('div','ii-rail-section');railSection.append(el('span','','最近项目'),el('span','ii-rail-hint','本机保存 10 条'));
   rail.append(railBrand,railNav,railSection,el('div','ii-rail-spacer'),el('span','ii-rail-footer','增强模型 · 本地优先'));
   body.append(rail);
  }
  const workspace=el('div','ii-workspace'),historyPanel=el('aside','ii-history ii-hidden'),historyList=el('div','ii-history-list');historyPanel.setAttribute('role','tabpanel');
+ const stylesPanel=el('main','sl-root ii-hidden');stylesPanel.setAttribute('role','tabpanel');
+ const styleLibrary=window.mountStyleLibrary?.(stylesPanel,{request:options.request,native:options.native?native:null});
  const historyHead=el('div','ii-history-head');historyHead.append(el('h2','','最近分析'),el('span','ii-history-count','0 / 10'));historyPanel.append(historyHead,historyList);
  const content=el('main','ii-main'),intro=el('div','ii-intro-wrap'),providerBar=el('section','ii-provider-bar');content.setAttribute('role','tabpanel');
  intro.append(el('h1','ii-intro','把画面，拆成创作语言。'),el('p','ii-muted','选中一张图片，拆解主体、材质、光影、镜头、构图，并分析艺术风格、字体设计与表现技法。'));
@@ -40,7 +55,7 @@ window.mountInspector=function(root,options){
  const health=el('div','ii-health','正在连接分析模型…');intro.append(health);
  const setupCard=el('section','ii-setup ii-hidden');
  const setupTitle=el('h2','','首次设置');
- const setupLead=el('p','ii-settings-note','拾图会先读取这台 Mac 的芯片、统一内存和可用磁盘空间，再推荐适合的本地视觉模型。硬件信息只在本机判断，不会上传。');
+ const setupLead=el('p','ii-settings-note','MiMo看图会先读取这台 Mac 的芯片、统一内存和可用磁盘空间，再推荐适合的本地视觉模型。硬件信息只在本机判断，不会上传。');
  const setupHardware=el('div','ii-setup-detail','正在检测这台 Mac…');
  const setupRecommendation=el('div','ii-setup-recommendation','正在生成推荐…');
  const setupModelAction=btn('使用推荐模型',chooseRecommendedModel,'ii-primary');
@@ -82,17 +97,21 @@ window.mountInspector=function(root,options){
  const openChatGPT=btn('复制图片与详细分析要求',sendToChatGPT,'ii-primary');
  const copyWebPrompt=btn('复制分析要求和页面链接',()=>copy(chatGPTPrompt(),copyWebPrompt));
  const responseInput=el('textarea','ii-chatgpt-response');responseInput.placeholder='从 ChatGPT 复制完整回复，然后在这里按 ⌘V 粘贴';
- const importChatGPT=btn('导入为拾图分析结果',importChatGPTResult,'ii-primary');
+ const importChatGPT=btn('导入为MiMo看图分析结果',importChatGPTResult,'ii-primary');
  chatGPTPanel.append(openChatGPT,copyWebPrompt,responseInput,importChatGPT);
- content.append(providerBar,setupCard,home,intro,settings,preview,resultHead,chatGPTPanel,error,retry,cards);workspace.append(historyPanel,content);body.append(workspace);
+ content.append(providerBar,setupCard,home,intro,settings,preview,resultHead,chatGPTPanel,error,retry,cards);workspace.append(historyPanel,content,stylesPanel);body.append(workspace);
  const foot=el('footer','ii-foot ii-hidden'),copyPrompt=btn('复制生图提示词',()=>copy(result.prompt,copyPrompt),'ii-primary'),copyAll=btn('复制全部模块',()=>copy(fields.map(([k,t])=>'【'+t+'】\n'+result[k]).join('\n\n'),copyAll));
  foot.append(copyPrompt,copyAll);shell.append(head,tabs,body,foot);
- let result=null,current=null,generation=0,timer=null,healthTimer=null,provider='mlx-adapter',historyRecords=[],activeHistoryId=null,systemSnapshot=null;
+ let result=null,current=null,generation=0,timer=null,healthTimer=null,provider='mlx-adapter',historyRecords=[],activeHistoryId=null,systemSnapshot=null,activeTab='analysis';
  function switchTab(name){
-  const showHistory=name==='history';historyPanel.classList.toggle('ii-hidden',!showHistory);content.classList.toggle('ii-hidden',showHistory);
-  analysisTab.classList.toggle('ii-active',!showHistory);historyTab.classList.toggle('ii-active',showHistory);
-  analysisTab.setAttribute('aria-selected',String(!showHistory));historyTab.setAttribute('aria-selected',String(showHistory));
-  if(railAnalysis){railAnalysis.classList.toggle('ii-active',!showHistory);railHistory.classList.toggle('ii-active',showHistory);}
+  if(name==='styles'&&!styleLibrary)name='analysis';activeTab=name;
+  const showHistory=name==='history',showStyles=name==='styles',showAnalysis=name==='analysis';
+  historyPanel.classList.toggle('ii-hidden',!showHistory);content.classList.toggle('ii-hidden',!showAnalysis);stylesPanel.classList.toggle('ii-hidden',!showStyles);
+  analysisTab.classList.toggle('ii-active',showAnalysis);historyTab.classList.toggle('ii-active',showHistory);stylesTab.classList.toggle('ii-active',showStyles);
+  analysisTab.setAttribute('aria-selected',String(showAnalysis));historyTab.setAttribute('aria-selected',String(showHistory));stylesTab.setAttribute('aria-selected',String(showStyles));
+  foot.classList.toggle('ii-hidden',!showAnalysis||!result);
+  if(railAnalysis){railAnalysis.classList.toggle('ii-active',showAnalysis);railHistory.classList.toggle('ii-active',showHistory);railStyles.classList.toggle('ii-active',showStyles);}
+  if(showStyles){styleLibrary.load();badge.textContent='风格提示词';}else updateModeStatus();
  }
  function providerTitle(selected){return selected==='chatgpt-web'?'ChatGPT / Codex CLI':selected==='custom-api'?'自定义 API':'增强模型';}
  function renderHistory(){
@@ -106,7 +125,7 @@ window.mountInspector=function(root,options){
  }
  function refreshHistory(){
   options.request('/history').then(data=>{historyRecords=Array.isArray(data.history)?data.history:[];renderHistory();})
-   .catch(()=>{historyList.replaceChildren(el('p','ii-history-empty','连接拾图后显示最近分析。'));});
+   .catch(()=>{historyList.replaceChildren(el('p','ii-history-empty','连接MiMo看图后显示最近分析。'));});
  }
  function persistHistory(parsed,sourceProvider){
   options.request('/history',{name:current?.name||'图片分析',provider:sourceProvider,result:parsed})
@@ -117,10 +136,10 @@ window.mountInspector=function(root,options){
   const selected=mode.value||provider;
   customPanel.classList.toggle('ii-hidden',selected!=='custom-api');
   codexTools.classList.toggle('ii-hidden',selected!=='chatgpt-web');
-  badge.textContent=providerTitle(selected);
+  badge.textContent=activeTab==='styles'?'风格提示词':providerTitle(selected);
   if(selected==='chatgpt-web'){
    settingsStatus.textContent='使用本机已登录的 Codex CLI 账号直接分析图片。';
-   settingsNote.textContent='不需要单独配置 OpenAI API Key；会使用已登录的 Codex CLI 账号，结果回到拾图并保存到最近分析。';
+   settingsNote.textContent='不需要单独配置 OpenAI API Key；会使用已登录的 Codex CLI 账号，结果回到MiMo看图并保存到最近分析。';
    drop.querySelector('span').textContent='图片会交给 Codex CLI 直连分析';
    if(health.textContent.startsWith('请先打开'))health.textContent='● ChatGPT / Codex CLI 就绪';
   }else if(selected==='custom-api'){
@@ -129,7 +148,7 @@ window.mountInspector=function(root,options){
    drop.querySelector('span').textContent='图片会交给你配置的 API 分析';
    health.textContent=customKeyHint.textContent.startsWith('已保存')?'● 自定义 API · 已配置':'● 自定义 API · 请填写并保存 API 设置';
   }else{
-   settingsStatus.textContent='使用 Qwen3-VL 8B 与从你的 Pinterest 设计图板训练的拾图 LoRA。';
+   settingsStatus.textContent='使用 Qwen3-VL 8B 与从你的 Pinterest 设计图板训练的MiMo看图 LoRA。';
    settingsNote.textContent='增强模型在这台 Mac 上分析，首次使用需载入模型并占用较多内存。';
    drop.querySelector('span').textContent='增强模型首次启动较慢，图片不会上传';
   }
@@ -166,7 +185,7 @@ window.mountInspector=function(root,options){
   if(!options.request)return;
   setupCodexRefresh.disabled=true;
   try{renderSystem(await options.request('/system'));}
-  catch(e){setupHardware.textContent='暂时无法读取本机状态，请确认 Mac 版拾图正在运行。';setupRecommendation.textContent=e.message;}
+  catch(e){setupHardware.textContent='暂时无法读取本机状态，请确认 Mac 版MiMo看图正在运行。';setupRecommendation.textContent=e.message;}
   finally{setupCodexRefresh.disabled=false;}
  }
  function chooseRecommendedModel(){
@@ -176,7 +195,7 @@ window.mountInspector=function(root,options){
  }
  function startCodexLogin(){
   if(options.native){native('codex-login');return;}
-  setupCodexStatus.textContent='请在 Mac 版拾图中完成 Codex 登录。';codexAccessStatus.textContent='请在 Mac 版拾图中完成 Codex 登录。';
+  setupCodexStatus.textContent='请在 Mac 版MiMo看图中完成 Codex 登录。';codexAccessStatus.textContent='请在 Mac 版MiMo看图中完成 Codex 登录。';
  }
  async function completeSetup(){
   setupDone.disabled=true;
@@ -206,7 +225,7 @@ window.mountInspector=function(root,options){
   catch(e){mode.value=previous;updateModeStatus();settingsStatus.textContent='设置未保存：'+e.message;}
   finally{mode.disabled=false;}
  };
- async function copy(text,b){try{if(options.native)native('copy',text);else if(options.copy)await options.copy(text);else {try{await navigator.clipboard.writeText(text);}catch{const t=el('textarea');t.value=text;root.append(t);t.select();if(!document.execCommand('copy'))throw Error('请选中文字手动复制。');t.remove();}}const old=b.textContent;b.textContent='已复制';setTimeout(()=>b.textContent=old,1200);}catch(e){showError('复制失败：'+e.message);}}
+ async function copy(text,b){try{if(options.native)await native('copy',text);else if(options.copy)await options.copy(text);else {try{await navigator.clipboard.writeText(text);}catch{const t=el('textarea');t.value=text;root.append(t);t.select();if(!document.execCommand('copy'))throw Error('请选中文字手动复制。');t.remove();}}const old=b.textContent;b.textContent='已复制';setTimeout(()=>b.textContent=old,1200);}catch(e){showError('复制失败：'+e.message);}}
  function showError(text){switchTab('analysis');error.textContent=text;error.classList.remove('ii-hidden');}
  async function readFile(file){if(!file)return;try{if(file.size>40*1024*1024)throw Error('文件超过40MB，请先缩小。');const url=URL.createObjectURL(file);try{await analyze(await normalize(url),file.name);}finally{URL.revokeObjectURL(url);}}catch(e){showError(e.message);}}
  async function normalize(src){return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>{const scale=Math.min(1,1280/Math.max(image.width,image.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(image.width*scale));c.height=Math.max(1,Math.round(image.height*scale));const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(image,0,0,c.width,c.height);try{resolve(c.toDataURL('image/jpeg',.9));}catch(e){reject(e);}};image.onerror=()=>reject(Error('无法读取这张图片。HEIC等格式可以从本地工具的“打开图片”导入。'));image.src=src;});}
@@ -242,7 +261,7 @@ window.mountInspector=function(root,options){
  function importChatGPTResult(){
   try{
    let text=responseInput.value.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
-   const start=text.indexOf('{'),end=text.lastIndexOf('}');if(start<0||end<start)throw Error('没有找到 JSON。请复制 ChatGPT 的完整回复；如果它用了普通段落，请让它按拾图要求输出 JSON。');
+   const start=text.indexOf('{'),end=text.lastIndexOf('}');if(start<0||end<start)throw Error('没有找到 JSON。请复制 ChatGPT 的完整回复；如果它用了普通段落，请让它按MiMo看图要求输出 JSON。');
    const source=JSON.parse(text.slice(start,end+1)),aliases={subject:['subject','主体'],material:['material','材质'],lighting:['lighting','光影'],camera:['camera','镜头'],composition:['composition','构图'],style:['style','艺术风格'],technique:['technique','艺术技法'],prompt:['prompt','生图提示词']},parsed={};
    for(const [key] of fields){const value=aliases[key].map(k=>source[k]).find(v=>typeof v==='string'&&v.trim());if(!value)throw Error(`回复缺少“${fields.find(([k])=>k===key)[1]}”字段。`);parsed[key]=value.trim();}
    chatGPTPanel.classList.remove('ii-hidden');showResult(parsed,'已导入 ChatGPT 网页分析结果 · 未使用 API','chatgpt-web');
@@ -262,7 +281,7 @@ window.mountInspector=function(root,options){
     if(state.status==='done'){
      const parsed=state.result;clearInterval(timer);
      const missing=fields.filter(([key])=>typeof parsed?.[key]!=='string'||!parsed[key].trim()).map(([,title])=>title);
-     if(missing.length)throw Error(`分析结果缺少“${missing.join('、')}”，可能仍连接着旧版分析服务。请退出并重新打开拾图后重试。`);
+     if(missing.length)throw Error(`分析结果缺少“${missing.join('、')}”，可能仍连接着旧版分析服务。请退出并重新打开MiMo看图后重试。`);
      const label=runProvider==='mlx-adapter'?'增强模型 · Pinterest LoRA':providerTitle(runProvider);
      showResult(parsed,'完成 · '+state.seconds+' 秒 · '+label,runProvider);return;
     }
@@ -279,12 +298,13 @@ window.mountInspector=function(root,options){
    if(mode.value==='custom-api'){health.textContent=customKeyHint.textContent.startsWith('已保存')?'● 自定义 API · 已配置':'● 自定义 API · 请填写并保存 API 设置';return;}
    health.textContent=!s.ready?(s.error||'增强模型文件未就绪'):s.running?'● 增强模型运行中 · Qwen3-VL 8B + LoRA':'● 增强模型就绪 · 首次使用时载入';
    if(!s.ready)healthTimer=setTimeout(checkHealth,5000);
-  }).catch(()=>{if(mode.value==='chatgpt-web'){health.textContent='● ChatGPT / Codex CLI · 使用已登录账号';return;}if(mode.value==='custom-api'){health.textContent='● 自定义 API · 请填写并保存 API 设置';return;}health.textContent='请先打开 Mac 上的“拾图”工具。';healthTimer=setTimeout(checkHealth,5000);});
+  }).catch(()=>{if(mode.value==='chatgpt-web'){health.textContent='● ChatGPT / Codex CLI · 使用已登录账号';return;}if(mode.value==='custom-api'){health.textContent='● 自定义 API · 请填写并保存 API 设置';return;}health.textContent='请先打开 Mac 上的“MiMo看图”工具。';healthTimer=setTimeout(checkHealth,5000);});
  }
  root.append(shell);
  refreshHistory();
  checkHealth();
  if(options.native) refreshSystem();
- return {analyze,showError,openChatGPT:sendToChatGPT,head,destroy(){generation++;clearInterval(timer);clearTimeout(healthTimer);shell.remove();}};
+ switchTab(options.startTab||'analysis');
+ return {analyze,showError,switchTab,openChatGPT:sendToChatGPT,head,destroy(){generation++;clearInterval(timer);clearTimeout(healthTimer);shell.remove();}};
 };
 })();

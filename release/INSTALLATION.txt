@@ -1,15 +1,16 @@
-拾图 0.1.0 / Shitu 0.1.0 安装说明
+MiMo看图 V2 / MiMo V2 — 2.0.0
 
-中文
-1. 打开 shitu-0.1.0-macos-arm64.dmg。
-2. 将“拾图.app”拖到“应用程序”。
-3. 若系统提示无法验证开发者，请到“系统设置 → 隐私与安全性”允许打开。
-4. 解压 shitu-0.1.0-chrome-extension.zip，在 chrome://extensions 开启开发者模式并加载解压后的文件夹。
+中文：
+1. 下载 DMG 或 App ZIP，将 MiMo看图.app 放入 Applications。
+2. 这是 Apple Silicon 开发构建，临时签名，未公证；首次打开按 macOS 提示处理。
+3. 桌面本机服务需要 Python 3.9+ / macOS Command Line Tools；模型和 Codex CLI 不附带。
+4. Chrome：解压扩展，开发者模式加载 extension 文件夹。在 Mac 应用菜单复制扩展配对码，打开扩展选项，粘贴后连接。
+5. 风格库有233条上游授权资料，遵守随包附带的非商业许可。个人小红书资料未打包。
+6. 不需要自动生成图的用户可直接使用提示词复制；在 ChatGPT 自行上传参考图。
 
-English
-1. Open shitu-0.1.0-macos-arm64.dmg.
-2. Drag 拾图.app to Applications.
-3. If macOS blocks the app, allow it under System Settings → Privacy & Security.
-4. Unzip shitu-0.1.0-chrome-extension.zip, enable Developer mode at chrome://extensions, and choose Load unpacked.
+English:
+Copy MiMo看图.app from the DMG or App ZIP into Applications. Apple Silicon development build, ad-hoc signed, not notarized. The desktop bridge requires Python 3.9+ / macOS Command Line Tools. Model data and Codex CLI are not included.
+Load the unpacked extension/ folder in Chrome Developer mode. Copy the pairing code from the Mac app menu, open extension Options, paste and connect. Do not share the code.
+233 licensed style entries are included under upstream noncommercial terms. Personal Xiaohongshu material is excluded. Image generation remains a manual prompt-copy workflow.
 
-The release does not include the large local model files. See MODEL-DOWNLOADS.md.
+Download checksums: SHA256SUMS.txt

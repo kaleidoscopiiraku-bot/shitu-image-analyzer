@@ -9,13 +9,13 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
-DATA = Path.home()/'Library/Application Support/拾图'
-PORT = 19428
+DATA = Path(os.environ.get('SHITU_DATA_DIR', str(Path.home()/'Library/Application Support/拾图')))
+PORT = int(os.environ.get('SHITU_PORT','19428'))
 MLX_ENDPOINT = 'http://127.0.0.1:19429'
 MLX_MODEL_DIR = DATA/'models/mlx-qwen3-vl'
 MLX_ADAPTER_DIR = DATA/'models/mlx-adapter-v2'
 MLX_PYTHON = DATA/'runtime/mlx/venv/bin/python'
-MLX_MODEL_LABEL = 'Qwen3-VL 8B + 拾图 Pinterest LoRA'
+MLX_MODEL_LABEL = 'Qwen3-VL 8B + MiMo看图 Pinterest LoRA'
 MLX_IDLE_SECONDS = 180
 CONFIG = DATA / 'config.json'
 HISTORY_FILE = DATA / 'history.json'
@@ -243,7 +243,7 @@ def model_catalog():
             if isinstance(loaded,list): entries=[x for x in loaded if isinstance(x,dict)]
         except (OSError,json.JSONDecodeError): pass
     if not entries:
-        entries=[{'id':'shitu-qwen3-vl-8b','name':'拾图增强模型 · Qwen3-VL 8B + LoRA',
+        entries=[{'id':'shitu-qwen3-vl-8b','name':'MiMo看图增强模型 · Qwen3-VL 8B + LoRA',
             'family':'Qwen3-VL','memory_gb':16,'disk_gb':14,'quality':'均衡','speed':'均衡',
             'installed':mlx_assets_ready(),'downloadable':False}]
     for item in entries:
@@ -298,7 +298,7 @@ def start_mlx_server():
         if mlx_child and mlx_child.poll() is not None:
             mlx_child=None
         if not mlx_assets_ready():
-            raise ValueError('本地增强模型尚未安装完整，请先重新打开拾图或检查本机模型文件。')
+            raise ValueError('本地增强模型尚未安装完整，请先重新打开MiMo看图或检查本机模型文件。')
         log_path=DATA/'logs/mlx-vlm.log'
         log_path.parent.mkdir(parents=True,exist_ok=True)
         log=log_path.open('a',encoding='utf-8')
@@ -318,8 +318,8 @@ def start_mlx_server():
             except Exception:
                 time.sleep(.5)
         if mlx_child.poll() is not None:
-            raise RuntimeError('本地增强模型启动失败，请查看拾图数据目录中的 logs/mlx-vlm.log。')
-        raise RuntimeError('本地增强模型载入超时，请查看拾图数据目录中的 logs/mlx-vlm.log。')
+            raise RuntimeError('本地增强模型启动失败，请查看MiMo看图数据目录中的 logs/mlx-vlm.log。')
+        raise RuntimeError('本地增强模型载入超时，请查看MiMo看图数据目录中的 logs/mlx-vlm.log。')
 
 def mlx_analyze(encoded):
     start_mlx_server()
@@ -569,13 +569,25 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if not self.allowed(): self.respond(403,{}); return
-        static = {'/':'index.html','/ui.js':'ui.js','/ui.css':'ui.css'}
+        static = {'/':'index.html','/ui.js':'ui.js','/ui.css':'ui.css','/style-library.js':'style-library.js','/style-library.css':'style-library.css','/style-library.html':'style-library.html'}
         if self.path in static:
             path=ROOT/'web'/static[self.path]
             kind={'html':'text/html','js':'text/javascript','css':'text/css'}[path.suffix[1:]]
             self.respond(200,path.read_bytes(),kind+'; charset=utf-8'); return
+        if self.path.startswith('/styles/previews/'):
+            relative=self.path.removeprefix('/styles/previews/')
+            if '/' in relative or '\\' in relative or not relative.startswith('p') or not relative.endswith(('.png','.jpg','.jpeg','.webp')):
+                self.respond(404,{'error':'不存在的预览。'}); return
+            path=ROOT/'web'/'styles'/'previews'/relative
+            if not path.is_file(): self.respond(404,{'error':'预览暂不可用。'}); return
+            kind={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'}[path.suffix]
+            self.respond(200,path.read_bytes(),kind); return
         if not self.authorize(): return
-        if self.path == '/health':
+        if self.path == '/styles':
+            path=ROOT/'web'/'styles'/'library.json'
+            if not path.is_file(): self.respond(503,{'error':'风格库尚未准备好。'}); return
+            self.respond(200,json.loads(path.read_text(encoding='utf-8'))); return
+        elif self.path == '/health':
             ready=mlx_assets_ready()
             running=bool(mlx_child and mlx_child.poll() is None)
             health=public_settings()
@@ -630,7 +642,7 @@ class Handler(BaseHTTPRequestHandler):
             if not (raw.startswith(b'\xff\xd8\xff') or raw.startswith(b'\x89PNG\r\n\x1a\n')):
                 raise ValueError('只接受经过转换的 JPEG 或 PNG 图片。')
             provider=data.get('provider',CURRENT_PROVIDER)
-            if provider not in SUPPORTED_PROVIDERS: raise ValueError('拾图只支持增强模型、ChatGPT 或自定义 API。')
+            if provider not in SUPPORTED_PROVIDERS: raise ValueError('MiMo看图只支持增强模型、ChatGPT 或自定义 API。')
             source_url=data.get('source_url','')
             if not isinstance(source_url,str) or len(source_url)>4096: raise ValueError('页面链接格式错误。')
         except Exception as e:

@@ -4,9 +4,9 @@
   "models": [
     {
       "id": "shitu-qwen3-vl-8b",
-      "name": "拾图增强模型 · Qwen3-VL 8B 4-bit + Pinterest LoRA",
+      "name": "MiMo看图增强模型 · Qwen3-VL 8B 4-bit + Pinterest LoRA",
       "family": "Qwen3-VL",
-      "variant": "8B Instruct 4-bit + 拾图 LoRA",
+      "variant": "8B Instruct 4-bit + MiMo看图 LoRA",
       "memory_gb": 16,
       "disk_gb": 14,
       "quality": "均衡",
@@ -18,7 +18,7 @@
       "license": "Apache-2.0",
       "model_path": "models/mlx-qwen3-vl",
       "adapter_path": "models/mlx-adapter-v2",
-      "notes": "当前拾图增强模式使用。发布包不内置模型；本机模型约 5.4 GB，另含约 83 MB 的拾图 LoRA 和运行环境。"
+      "notes": "当前MiMo看图增强模式使用。发布包不内置模型；本机模型约 5.4 GB，另含约 83 MB 的MiMo看图 LoRA 和运行环境。"
     },
     {
       "id": "qwen3-vl-4b-4bit",
@@ -34,7 +34,7 @@
       "release_state": "candidate",
       "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-4B-Instruct-4bit",
       "license": "Apache-2.0",
-      "notes": "模型卡标注约 3.09 GB。已记录下载来源，当前版本尚未接入自动下载或拾图 LoRA 适配。"
+      "notes": "模型卡标注约 3.09 GB。已记录下载来源，当前版本尚未接入自动下载或MiMo看图 LoRA 适配。"
     },
     {
       "id": "qwen3-vl-4b-thinking-4bit",
@@ -50,7 +50,7 @@
       "release_state": "candidate",
       "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-4B-Thinking-4bit",
       "license": "Apache-2.0",
-      "notes": "适合低内存设备做对照测试；当前版本不作为拾图增强模式的默认运行器。"
+      "notes": "适合低内存设备做对照测试；当前版本不作为MiMo看图增强模式的默认运行器。"
     },
     {
       "id": "qwen3-vl-8b-8bit",
@@ -66,7 +66,7 @@
       "release_state": "candidate",
       "source_url": "https://huggingface.co/mlx-community/Qwen3-VL-8B-Instruct-8bit",
       "license": "Apache-2.0",
-      "notes": "适合统一内存更大的 Apple Silicon Mac；当前版本只保留在清单中，尚未接入拾图 LoRA 与自动下载。"
+      "notes": "适合统一内存更大的 Apple Silicon Mac；当前版本只保留在清单中，尚未接入MiMo看图 LoRA 与自动下载。"
     }
   ]
 }

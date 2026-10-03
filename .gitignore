@@ -11,3 +11,13 @@ tests/fixture.jpg
 release/*.dmg
 release/*.zip
 release/SHA256SUMS.txt
+
+source-data/
+outputs/
+paths.json
+*.app/
+release/*.dmg
+release/*.zip
+release/SHA256SUMS.txt
+
+web/styles/previews/

@@ -16,6 +16,14 @@ b=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(b)
 
 class BridgeTest(unittest.TestCase):
+ def test_style_library_auth_and_preview_path_boundaries(self):
+  self.assertEqual(self.request('/styles',auth=False)[0],401)
+  self.assertEqual(self.request('/styles',origin='https://example.com')[0],403)
+  status,data=self.request('/styles')
+  self.assertEqual(status,200)
+  self.assertGreater(len(data['styles']),200)
+  self.assertEqual(self.request('/styles/previews/../../config.json')[0],404)
+  self.assertEqual(self.request('/styles/previews/p%2f..%2fconfig.png')[0],404)
  @classmethod
  def setUpClass(cls):
   cls.server=b.ThreadingHTTPServer(('127.0.0.1',0),b.Handler)

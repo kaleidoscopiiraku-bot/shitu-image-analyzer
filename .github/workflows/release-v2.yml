@@ -1,0 +1,42 @@
+name: Build MiMo V2 draft assets
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and verify licensed previews
+        run: python3 fetch_previews.py
+      - name: Validate source
+        run: |
+          python3 -m unittest discover -s tests -q
+          node --check extension/background.js
+          node --check extension/options.js
+      - name: Build and package public app
+        run: |
+          python3 build.py
+          python3 package_release.py
+          codesign --verify --deep --strict MiMo看图.app
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          for line in Path('release/SHA256SUMS.txt').read_text().splitlines():
+              digest,name=line.split('  ',1)
+              assert hashlib.sha256((Path('release')/name).read_bytes()).hexdigest()==digest,name
+          print('All release checksums verified.')
+          PY
+        working-directory: ${{ github.workspace }}
+      - name: Upload to existing V2 draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,subprocess
+          release=json.loads(subprocess.check_output(['gh','release','view','v2.0.0','--repo','${{ github.repository }}','--json','isDraft']))
+          assert release['isDraft'], 'V2 must remain a draft during validation.'
+          PY
+          gh release upload v2.0.0 release/mimo-2.0.0-macos-arm64.dmg release/mimo-2.0.0-macos-arm64.zip release/mimo-2.0.0-chrome-extension.zip release/INSTALLATION.txt release/MODEL-DOWNLOADS.md release/SHA256SUMS.txt --clobber --repo "${{ github.repository }}"

@@ -1,18 +1,13 @@
-# Verification · 拾图 0.1.0
+# V2 verification
 
-This file records the checks performed for the current local release candidate.
+Verified on 2026-10-03 before publication:
 
-## Passed
+- 20 checks passed for loopback authorization, provider dispatch, history, licensed sources, comparison-container cleanup, unique first-run pairing, existing config reuse and mode 0600 permissions.
+- Swift app build completed. The actual DMG-mounted and ZIP-extracted applications both passed strict ad-hoc signature verification and matched all built application file bytes.
+- Both archives passed CRC checks. App version and Chrome manifest are 2.0.0. The app plist contains no embedded pairing secret; the extension has no config.js.
+- All 233 public entries retain upstream originals, real preview bytes, source links and individual PolyForm Noncommercial licenses. Personal Xiaohongshu additions are excluded.
+- Private credential scan found no current device credentials in the source or app/extension archives. No private configs, histories, logs, models, runtime or browser source-data are bundled.
+- Browser UI verified search, complete photo/artwork comparison, copying an 878-character style prompt, adding a favorite, and retaining that favorite after refresh.
+- All five downloadable payloads match SHA256SUMS.txt.
 
-- `python3 -m unittest discover -s tests -v`: 17 tests passed.
-- Python AST syntax check passed for `server.py` and `build.py`.
-- Node syntax check passed for `web/ui.js` and `extension/background.js`.
-- `拾图.app` passed `codesign --verify --deep --strict`.
-- The signed app contains `model-manifest.json` and the Codex CLI login entry.
-- The local `/system` endpoint recognized the installed `shitu-qwen3-vl-8b` model and selected it as the recommendation.
-- The DMG mounted successfully and contained the app, model download list, and installation instructions.
-- The App ZIP and Chrome extension ZIP were extracted and checked; their package pairing tokens matched within the controlled build.
-
-## Scope
-
-These checks cover the local Apple Silicon development build, loopback bridge, model metadata, package integrity, and extension syntax. They do not constitute Apple notarization, App Store review, Chrome Web Store review, or a public multi-user pairing audit.
+Real model analysis on a fresh Mac, Developer ID signing/notarization and automated image generation are outside the verified release scope. The personal application remains separate and was not overwritten by this public release task.

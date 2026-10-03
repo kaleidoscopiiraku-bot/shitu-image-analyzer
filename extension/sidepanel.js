@@ -49,7 +49,7 @@
     return copiedImage && copiedPrompt ? {} : {
       warning: copiedPrompt
         ? '已复制分析要求；浏览器没有复制图片，请在 ChatGPT 中手动上传刚才选中的图片。'
-        : '图片和分析要求未能自动复制，请手动上传图片并从拾图重新复制分析要求。'
+        : '图片和分析要求未能自动复制，请手动上传图片并从MiMo看图重新复制分析要求。'
     };
   }
   async function activeTabId() {

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Security
 import WebKit
 import Carbon
 import UniformTypeIdentifiers
@@ -14,22 +15,22 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var shortcut: EventHotKeyRef?
     let root = Bundle.main.resourceURL!
     let fileManager = Foundation.FileManager()
-    let dataRoot = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/拾图")
+    let dataRoot = ProcessInfo.processInfo.environment["SHITU_DATA_DIR"].map { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/拾图")
     var token = ""
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         buildMenu()
         NSApp.servicesProvider = self
         NSUpdateDynamicServices()
-        token = Bundle.main.object(forInfoDictionaryKey:"ShituLocalToken") as? String ?? ""
-        if token.isEmpty { alert("缺少本地配对配置，请重新安装拾图。"); NSApp.terminate(nil); return }
+        do { token = try PairingConfiguration.loadToken(at:dataRoot) }
+        catch { alert("无法读取本机配对配置：\(error.localizedDescription)"); NSApp.terminate(nil); return }
         let cfg = WKWebViewConfiguration()
         cfg.userContentController.add(self, name: "native")
         cfg.userContentController.addUserScript(WKUserScript(source: "window.__shituToken = \"\(token)\";", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         web = WKWebView(frame: .zero, configuration: cfg)
         web.navigationDelegate = self
         window = NSWindow(contentRect: NSRect(x: 0,y: 0,width: 1040,height: 760), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
-        window.title = "拾图 · 图片分析"
+        window.title = "MiMo看图 · 风格提示词与图片分析"
         window.minSize = NSSize(width: 760,height: 500)
         window.level = .normal
         window.isReleasedWhenClosed = false
@@ -56,16 +57,23 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         add("打开图片…",#selector(openFile),"o")
         add("框选图片  ⌃⌥I",#selector(capture))
         add("分析剪贴板图片",#selector(clipboard))
-        add("显示拾图",#selector(show))
+        add("显示MiMo看图",#selector(show))
+        add("复制浏览器扩展配对码",#selector(copyPairingCode))
         menu.addItem(.separator())
         let services=NSMenu();let item=NSMenuItem(title:"服务",action:nil,keyEquivalent:"");item.submenu=services;menu.addItem(item);NSApp.servicesMenu=services
-        add("退出拾图",#selector(quit),"q")
+        add("退出MiMo看图",#selector(quit),"q")
         let editTop=NSMenuItem();main.addItem(editTop);let edit=NSMenu(title:"编辑");editTop.submenu=edit
         for (title,action,key) in [("复制",#selector(NSText.copy(_:)),"c"),("粘贴",#selector(NSText.paste(_:)),"v"),("全选",#selector(NSText.selectAll(_:)),"a")] { edit.addItem(NSMenuItem(title:title,action:action,keyEquivalent:key)) }
         NSApp.mainMenu=main
         statusItem=NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
-        statusItem.button?.image=NSImage(systemSymbolName:"viewfinder",accessibilityDescription:"拾图")
+        statusItem.button?.image=NSImage(systemSymbolName:"viewfinder",accessibilityDescription:"MiMo看图")
         statusItem.menu=menu
+    }
+    @objc func copyPairingCode() {
+        NSPasteboard.general.clearContents()
+        if NSPasteboard.general.setString(token,forType:.string) {
+            alert("已复制这台 Mac 的扩展配对码。请在 Chrome 扩展的选项中粘贴并连接；不要公开分享配对码。")
+        } else { alert("配对码复制失败，请重试。") }
     }
     func trace(_ text: String) {
         let u=dataRoot.appendingPathComponent("logs/native.log")
@@ -111,11 +119,24 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     }
     func webView(_ webView:WKWebView,didFailProvisionalNavigation navigation:WKNavigation!,withError error:Error){trace("navigation error: \(error.localizedDescription)");alert("页面加载失败：\(error.localizedDescription)")}
     func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){
+        guard message.frameInfo.isMainFrame, message.frameInfo.securityOrigin.host == "127.0.0.1", message.frameInfo.securityOrigin.port == 19428 else{
+            trace("native rejected: main=\(message.frameInfo.isMainFrame) origin=\(message.frameInfo.securityOrigin.protocol) \(message.frameInfo.securityOrigin.host) \(message.frameInfo.securityOrigin.port)")
+            return
+        }
         guard let b=message.body as? [String:Any],let action=b["action"] as? String else{return}
         switch action {
         case "capture":capture()
         case "clipboard":clipboard()
-        case "copy":if let text=b["value"] as? String{NSPasteboard.general.clearContents();NSPasteboard.general.setString(text,forType:.string)}
+        case "copy":
+            var copied=false
+            if let text=b["value"] as? String{NSPasteboard.general.clearContents();copied=NSPasteboard.general.setString(text,forType:.string)}
+            if let requestId=b["requestId"] as? String,
+               let data=try? JSONSerialization.data(withJSONObject:[requestId,copied]),let json=String(data:data,encoding:.utf8){
+                web.evaluateJavaScript("window.__shituNativeReply?.(...\(json))",completionHandler:nil)
+            }
+        case "open-link":
+            if let text=b["value"] as? String,let url=URL(string:text),url.scheme=="https",
+               let host=url.host,["github.com","raw.githubusercontent.com","www.xiaohongshu.com","xiaohongshu.com","x.com"].contains(host){NSWorkspace.shared.open(url)}
         case "chatgpt-web":
             guard let payload=b["value"] as? [String:Any],let image=payload["image"] as? String,let prompt=payload["prompt"] as? String,
                   let encoded=image.split(separator:",",omittingEmptySubsequences:false).last,
@@ -145,7 +166,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         guard let binary=codexExecutable() else {NSWorkspace.shared.open(url);return}
         let script=fileManager.temporaryDirectory.appendingPathComponent("shitu-codex-login-\(UUID().uuidString).command")
         let escaped=binary.replacingOccurrences(of:"'",with:"'\\''")
-        let contents="#!/bin/zsh\n\"\(escaped)\" login\nstatus=$?\necho\nif [ $status -eq 0 ]; then echo '拾图：Codex 登录完成，可以关闭此窗口。'; else echo '拾图：Codex 登录未完成，请按终端提示重试。'; fi\necho\nread -r -n 1 -s -p '按任意键关闭此窗口…'\n"
+        let contents="#!/bin/zsh\n\"\(escaped)\" login\nstatus=$?\necho\nif [ $status -eq 0 ]; then echo 'MiMo看图：Codex 登录完成，可以关闭此窗口。'; else echo 'MiMo看图：Codex 登录未完成，请按终端提示重试。'; fi\necho\nread -r -n 1 -s -p '按任意键关闭此窗口…'\n"
         do {
             try contents.write(to:script,atomically:true,encoding:.utf8)
             try fileManager.setAttributes([.posixPermissions:0o700],ofItemAtPath:script.path)
@@ -173,7 +194,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         DispatchQueue.main.asyncAfter(deadline:.now()+0.3){
             let p=Process();p.executableURL=URL(fileURLWithPath:"/usr/sbin/screencapture");p.arguments=["-i","-s","-x",url.path]
             p.terminationHandler={ [weak self] _ in DispatchQueue.main.async {guard let self=self else{return};defer{try? self.fileManager.removeItem(at:url)};if self.fileManager.fileExists(atPath:url.path){self.loadImage(url)}else{self.show()}} }
-            do{try p.run()}catch{self.alert("无法开始框选。请在系统设置中允许拾图录制屏幕。");self.show()}
+            do{try p.run()}catch{self.alert("无法开始框选。请在系统设置中允许MiMo看图录制屏幕。");self.show()}
         }
     }
     @objc func analyzeService(_ pasteboard:NSPasteboard,userData:String?,error:AutoreleasingUnsafeMutablePointer<NSString>){
@@ -185,7 +206,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     func application(_ sender:NSApplication,openFiles filenames:[String]){if let path=filenames.first{if web==nil{DispatchQueue.main.asyncAfter(deadline:.now()+1){self.loadImage(URL(fileURLWithPath:path))}}else{loadImage(URL(fileURLWithPath:path))}};NSApp.reply(toOpenOrPrint:.success)}
     func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows flag:Bool)->Bool{show();return true}
     func applicationWillTerminate(_ notification:Notification){process?.terminate()}
-    func alert(_ message:String){let a=NSAlert();a.messageText="拾图";a.informativeText=message;a.runModal()}
+    func alert(_ message:String){let a=NSAlert();a.messageText="MiMo看图";a.informativeText=message;a.runModal()}
 }
 let app=NSApplication.shared
 let delegate=App()

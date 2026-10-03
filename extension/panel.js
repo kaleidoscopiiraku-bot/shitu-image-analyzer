@@ -21,7 +21,7 @@ if(!globalThis.__shituPanelInstalled){
    }catch{
     copiedPrompt=await copyPrompt();
    }
-   return copiedImage&&copiedPrompt?{}:{warning:copiedPrompt?'已复制分析要求；浏览器没有复制图片，请在 ChatGPT 中手动上传刚才选中的图片。':'图片和分析要求未能自动复制，请手动上传图片并从拾图重新复制分析要求。'};
+   return copiedImage&&copiedPrompt?{}:{warning:copiedPrompt?'已复制分析要求；浏览器没有复制图片，请在 ChatGPT 中手动上传刚才选中的图片。':'图片和分析要求未能自动复制，请手动上传图片并从MiMo看图重新复制分析要求。'};
   },request:async(path,body)=>{const response=await chrome.runtime.sendMessage({type:'shitu-api',path,body});if(response?.error)throw Error(response.error);if(!response?.data)throw Error('本地服务没有响应。');return response.data;}});
   mount.firstElementChild.style.maxHeight=(innerHeight-32)+'px';
   const resize=()=>{if(!host)return;const r=host.getBoundingClientRect();host.style.top=Math.max(8,Math.min(r.top,innerHeight-55))+'px';if(host.style.left)host.style.left=Math.max(8,Math.min(r.left,innerWidth-r.width-8))+'px';};

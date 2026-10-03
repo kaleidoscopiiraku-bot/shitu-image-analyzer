@@ -1,45 +1,16 @@
-# 拾图 0.1.0
+# MiMo看图 V2 · v2.0.0
 
-这是拾图的 macOS Apple Silicon 本地开发版发布包，包含增强模型入口、ChatGPT / Codex CLI 直连入口、最近分析记录和 Chrome 图片右键分析插件。
+「拾图」正式更名为 **MiMo看图**。
 
-## 安装
+- 新增风格提示词库：搜索、分类、排序、完整原图/成片对比、详情与复制。
+- 新增本机收藏夹，常用画风可从卡片或详情收藏。
+- 修复误用二维码作为效果预览的问题。
+- 复制提示词移除照片分屏要求，生成完整风格化成片。
+- 保留已有图片分析、Chrome 右键/侧栏、框选、Finder 服务和最近十条分析。
+- 改为每台 Mac 随机生成配对码；扩展从选项页面手动连接，安装包不内置账号或配对码。
 
-1. 打开 `.dmg`，把“拾图”拖到“应用程序”。
-2. 第一次打开时，如果 macOS 提示无法验证开发者，请在“系统设置 → 隐私与安全性”中允许打开。
-3. Chrome 插件使用单独的 `shitu-0.1.0-chrome-extension.zip`：解压后打开 `chrome://extensions`，开启“开发者模式”，选择“加载已解压的扩展程序”。
+公开版随附233条上游许可允许非商业分发的风格及样张，各条许可和来源随包提供。个人小红书正文/附件不公开打包，个人版数量与公开版不同。
 
-## 模型
+下载 DMG 或 App ZIP，将 MiMo看图.app 放入 Applications。Chrome 扩展另行下载并按 README 配对。Apple Silicon 开发构建，临时签名，未公证；桌面服务需要 Python 3.9+。模型、私人 LoRA、训练数据和 Codex CLI 未打包。提示词生成图仍采用复制到 ChatGPT 的手动流程。
 
-发布包不内置约 5–12 GB 的模型文件。当前验证过的增强模型是 Qwen3-VL 8B 4-bit 加拾图 Pinterest LoRA；候选模型、硬件建议和来源见 `MODEL-DOWNLOADS.md` 及 App 内的模型清单。
-
-## ChatGPT / Codex CLI
-
-“ChatGPT 直连”使用本机已登录的 Codex CLI，不需要 OpenAI API Key。首次使用可在 App 的设置卡片中打开“Codex 登录”。
-
-## 当前发布性质
-
-这是可运行的本地开发版，使用 macOS ad-hoc 签名，尚未进行 Apple Developer ID 公证，也未提交 App Store。公开分发前仍需要正式签名、公证和每台设备独立的配对配置。
-
----
-
-# Shitu 0.1.0 · English
-
-This Apple Silicon macOS development release includes the enhanced local model entry, ChatGPT / Codex CLI direct analysis, recent analysis history, and the Chrome image context-menu workflow.
-
-## Installation
-
-1. Open the `.dmg` and drag `拾图.app` to Applications.
-2. If macOS blocks the ad-hoc signed app, allow it under System Settings → Privacy & Security.
-3. Unzip `shitu-0.1.0-chrome-extension.zip`, open `chrome://extensions`, enable Developer mode, and choose **Load unpacked**.
-
-## Models
-
-The release does not bundle the 5–12 GB model files. The verified enhanced setup is Qwen3-VL 8B 4-bit plus the Shitu Pinterest LoRA. Candidate models, hardware guidance, and source links are documented in `MODEL-DOWNLOADS.md` and the bundled model manifest.
-
-## ChatGPT / Codex CLI
-
-The ChatGPT direct option uses the locally installed and authenticated Codex CLI; it does not require an OpenAI API key. Use the “打开 Codex 登录 / Open Codex Login” button on the setup card when needed.
-
-## Release status
-
-This is a runnable local development build with an ad-hoc macOS signature. It is not notarized and has not been submitted to the Mac App Store. A public multi-user release still needs Developer ID notarization and per-device first-run pairing.
+升级沿用原有应用标识和本机数据目录，不上传配置、API Key、收藏、记录或模型。

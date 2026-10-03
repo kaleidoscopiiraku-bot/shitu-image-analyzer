@@ -1,4 +1,4 @@
-importScripts('config.js');
+chrome.storage.local.setAccessLevel?.({accessLevel:'TRUSTED_CONTEXTS'});
 const BASE='http://127.0.0.1:19428';
 const pendingSidePanels=new Map();
 function registerContextMenus(){chrome.contextMenus.removeAll(()=>{
@@ -13,7 +13,9 @@ chrome.runtime.onInstalled.addListener(configureSidePanel);
 chrome.runtime.onStartup.addListener(configureSidePanel);
 configureSidePanel();
 async function api(path,body){
- let r;try{r=await fetch(BASE+path,{method:body?'POST':'GET',headers:{'Authorization':'Bearer '+SHITU_TOKEN,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});}catch{throw Error('请先打开 Mac 上的“拾图”，再点击重新分析。');}
+ const {pairingToken}=await chrome.storage.local.get('pairingToken');
+ if(!pairingToken)throw Error('请先在扩展选项中连接这台 Mac 的 MiMo看图。');
+ let r;try{r=await fetch(BASE+path,{method:body?'POST':'GET',headers:{'Authorization':'Bearer '+pairingToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});}catch{throw Error('请先打开 Mac 上的“MiMo看图”，再点击重新分析。');}
  const j=await r.json();if(!r.ok)throw Error(j.error||'本地服务连接失败');return j;
 }
 chrome.runtime.onMessage.addListener((m,sender,reply)=>{
@@ -70,7 +72,7 @@ chrome.contextMenus.onClicked.addListener(async(info,tab)=>{
    else await send(tab.id,frame,{type:'shitu-error',error:e.message});
   }catch{
    chrome.action.setBadgeText({tabId:tab.id,text:'!'});chrome.action.setBadgeBackgroundColor({tabId:tab.id,color:'#b64a3b'});
-   chrome.action.setTitle({tabId:tab.id,title:'拾图分析失败：'+e.message});console.warn('拾图：',e.message);
+   chrome.action.setTitle({tabId:tab.id,title:'MiMo看图分析失败：'+e.message});console.warn('MiMo看图：',e.message);
   }
  }
 });
